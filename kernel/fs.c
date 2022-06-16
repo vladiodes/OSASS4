@@ -401,6 +401,43 @@ bmap(struct inode *ip, uint bn)
     return addr;
   }
 
+  bn -= NINDIRECT;
+
+  if(bn < NDOUBLE){
+    // Load double indirect block, allocating if necessary.
+    if((addr = ip->addrs[NDIRECT + 1]) == 0)
+      ip->addrs[NDIRECT + 1] = addr = balloc(ip->dev);
+    
+    // get the first level indirect
+    bp = bread(ip->dev, addr);
+    a = (uint*)bp->data;
+    
+    // calculating the 2nd level indirect
+    // and calculating the block num in the 2nd level indirect
+    uint second_level_indirect = bn / NINDIRECT;
+    uint disk_block_idx = bn % NINDIRECT;
+    
+    // load 2nd level indirect table, allocating if necessary
+    if((addr = a[second_level_indirect]) == 0){
+      a[second_level_indirect] = addr = balloc(ip->dev);
+      log_write(bp);
+    }
+    brelse(bp);
+
+    // get the double indirect table, second level
+    bp = bread(ip->dev, addr);
+    a = (uint*)bp->data;
+
+    // if the block idx doesn't exist in the second lvl table, assign a block to this entry
+    if((addr = a[disk_block_idx]) == 0){
+      a[second_level_indirect] = addr = balloc(ip->dev);
+      log_write(bp);
+    }
+
+    brelse(bp);
+    return addr;
+  }
+
   panic("bmap: out of range");
 }
 
