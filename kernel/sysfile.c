@@ -165,6 +165,15 @@ bad:
   return -1;
 }
 
+uint64 sys_symlink(void){
+  return 0;
+}
+
+uint64 sys_readlink(void){
+  return 0;
+}
+
+
 // Is the directory dp empty except for "." and ".." ?
 static int
 isdirempty(struct inode *dp)

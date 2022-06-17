@@ -3208,7 +3208,7 @@ int run(void f(char *), char *s)
   }
 }
 
-int main(int argc, char *argv[])
+void sanityCheckFirstPart(void)
 {
   char *direct = malloc(1024 * 12);
   char *single = malloc(268 * 1024);
@@ -3265,6 +3265,9 @@ int main(int argc, char *argv[])
   free(direct);
   free(single);
   free(d_indirect);
+}
 
+int main(int argc, char *argv[]){
+  printf("%d%d\n",symlink("asd","asd"),readlink("asd","asd",3));
   return 0;
 }
