@@ -433,7 +433,7 @@ bmap(struct inode *ip, uint bn)
 
     // if the block idx doesn't exist in the second lvl table, assign a block to this entry
     if((addr = a[disk_block_idx]) == 0){
-      a[second_level_indirect] = addr = balloc(ip->dev);
+      a[disk_block_idx] = addr = balloc(ip->dev);
       log_write(bp);
     }
 
