@@ -410,9 +410,11 @@ sys_open(void)
 
   if ((ip->type == T_SYMLINK))
   {
+    // if nofollow is set - we simply open the symlink file
     if (!(omode & O_NOFOLLOW))
     {
       int deref_count = 0;
+      // dereferencing symlink
       while (ip->type == T_SYMLINK && deref_count < MAX_DEREFERENCE)
       {
         char target[MAXPATH];
@@ -421,7 +423,7 @@ sys_open(void)
         if (len > MAXPATH)
           panic("open : corrupted symlink inode");
 
-        readi(ip, 0, (uint64)target, 0, len + 1);
+        readi(ip, 0, (uint64)target, 0, len + 1); //reading including null terminator character
         iunlockput(ip);
         if ((ip = namei(target)) == 0)
         {
@@ -531,6 +533,7 @@ sys_chdir(void)
   if ((ip->type == T_SYMLINK))
   {
     int deref_count = 0;
+    // dereferencing symlink
     while (ip->type == T_SYMLINK && deref_count < MAX_DEREFERENCE)
     {
       int len = ip->size - 1;
@@ -538,7 +541,7 @@ sys_chdir(void)
       if (len > MAXPATH)
         panic("open : corrupted symlink inode");
 
-      readi(ip, 0, (uint64)path, 0, len + 1);
+      readi(ip, 0, (uint64)path, 0, len + 1); //reading including null terminator character
       iunlockput(ip);
       if ((ip = namei(path)) == 0)
       {
@@ -612,7 +615,7 @@ sys_exec(void)
     return -1;
   }
   ilock(ip);
-
+  // dereferencing symlink
   if ((ip->type == T_SYMLINK))
   {
     int deref_count = 0;
@@ -623,7 +626,7 @@ sys_exec(void)
       if (len > MAXPATH)
         panic("open : corrupted symlink inode");
 
-      readi(ip, 0, (uint64)path, 0, len + 1);
+      readi(ip, 0, (uint64)path, 0, len + 1); //reading including null terminator character
       iunlockput(ip);
       if ((ip = namei(path)) == 0)
       {
