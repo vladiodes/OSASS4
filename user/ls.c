@@ -77,16 +77,19 @@ void ls(char *path)
 
       switch (st.type)
       {
-      case T_FILE:
-        printf("%s %d %d %d\n", fmtname(buf), st.type, st.ino, st.size);
-        break;
-
       case T_SYMLINK:
         readlink(buf, target_name, 512);
         printf("%s -> %s %d %d %d\n", fmtname(buf), target_name, st.type, st.ino, st.size);
         break;
-      }
 
+      case T_FILE:
+        printf("%s %d %d %d\n", fmtname(buf), st.type, st.ino, st.size);
+        break;
+
+      case T_DIR:
+        printf("%s %d %d %d\n", fmtname(buf), st.type, st.ino, st.size);
+        break;
+      }
     }
     break;
   }
