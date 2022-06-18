@@ -3268,6 +3268,9 @@ void sanityCheckFirstPart(void)
 }
 
 int main(int argc, char *argv[]){
-  printf("%d%d\n",symlink("asd","asd"),readlink("asd","asd",3));
+  char buf[30];
+  printf("%d\n",symlink("ls","ls_new"));
+  printf("%d\n",readlink("ls_new",buf,30));
+  printf("%s\n",buf);
   return 0;
 }
