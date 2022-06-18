@@ -3268,9 +3268,10 @@ void sanityCheckFirstPart(void)
 }
 
 int main(int argc, char *argv[]){
-  char buf[30];
-  printf("%d\n",symlink("/ls","/ls_new"));
-  printf("%d\n",readlink("ls_new",buf,30));
-  printf("%s\n",buf);
+  printf("%d\n",symlink("ls","ls_new"));
+  int fd = open("ls_new",0x800);
+  struct stat st;
+  fstat(fd,&st);
+  printf("type:%d\n",st.type);
   return 0;
 }

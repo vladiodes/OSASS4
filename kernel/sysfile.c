@@ -393,7 +393,7 @@ sys_open(void)
       return -1;
     }
     ilock(ip);
-    if (ip->type == T_DIR && omode != O_RDONLY)
+    if (ip->type == T_DIR && !(omode == O_RDONLY || omode == O_NOFOLLOW))
     {
       iunlockput(ip);
       end_op();
@@ -406,6 +406,39 @@ sys_open(void)
     iunlockput(ip);
     end_op();
     return -1;
+  }
+
+  if ((ip->type == T_SYMLINK))
+  {
+    if (!(omode & O_NOFOLLOW))
+    {
+      int deref_count = 0;
+      while (ip->type == T_SYMLINK && deref_count < MAX_DEREFERENCE)
+      {
+        char target[MAXPATH];
+        int len = ip->size - 1;
+
+        if (len > MAXPATH)
+          panic("open : corrupted symlink inode");
+
+        readi(ip, 0, (uint64)target, 0, len + 1);
+        iunlockput(ip);
+        if ((ip = namei(target)) == 0)
+        {
+          end_op();
+          return -1;
+        }
+        ilock(ip);
+        deref_count++;
+      }
+      if (deref_count >= MAX_DEREFERENCE)
+      {
+        printf("too long symlinks pointing at each other\n");
+        iunlockput(ip);
+        end_op();
+        return -1;
+      }
+    }
   }
 
   if ((f = filealloc()) == 0 || (fd = fdalloc(f)) < 0)
