@@ -640,7 +640,7 @@ void writebig(char *s)
     exit(1);
   }
 
-  for (i = 0; i < MAXFILE; i++)
+  for (i = 0; i < 1024; i++)
   {
     ((int *)buf)[0] = i;
     if (write(fd, buf, BSIZE) != BSIZE)
@@ -3260,18 +3260,162 @@ void sanityCheckFirstPart(void)
 
   close(fd);
 
-  // if (write(direct_fd, &direct, 1024 * 12) == 0)
-  //   printf("Finished writing 12KB (direct)\n");
   free(direct);
   free(single);
   free(d_indirect);
 }
 
-int main(int argc, char *argv[]){
-  printf("%d\n",symlink("ls","ls_new"));
-  int fd = open("ls_new",0x800);
-  struct stat st;
-  fstat(fd,&st);
-  printf("type:%d\n",st.type);
-  return 0;
+int main(int argc, char *argv[])
+{
+  int continuous = 0;
+  char *justone = 0;
+
+  if (argc == 2 && strcmp(argv[1], "-c") == 0)
+  {
+    continuous = 1;
+  }
+  else if (argc == 2 && strcmp(argv[1], "-C") == 0)
+  {
+    continuous = 2;
+  }
+  else if (argc == 2 && argv[1][0] != '-')
+  {
+    justone = argv[1];
+  }
+  else if (argc > 1)
+  {
+    printf("Usage: usertests [-c] [testname]\n");
+    exit(1);
+  }
+
+  struct test
+  {
+    void (*f)(char *);
+    char *s;
+  } tests[] = {
+      {MAXVAplus, "MAXVAplus"},
+      {manywrites, "manywrites"},
+      {execout, "execout"},
+      {copyin, "copyin"},
+      {copyout, "copyout"},
+      {copyinstr1, "copyinstr1"},
+      {copyinstr2, "copyinstr2"},
+      {copyinstr3, "copyinstr3"},
+      {rwsbrk, "rwsbrk"},
+      {truncate1, "truncate1"},
+      {truncate2, "truncate2"},
+      {truncate3, "truncate3"},
+      {reparent2, "reparent2"},
+      {pgbug, "pgbug"},
+      {sbrkbugs, "sbrkbugs"},
+      // {badwrite, "badwrite" },
+      {badarg, "badarg"},
+      {reparent, "reparent"},
+      {twochildren, "twochildren"},
+      {forkfork, "forkfork"},
+      {forkforkfork, "forkforkfork"},
+      {argptest, "argptest"},
+      {createdelete, "createdelete"},
+      {linkunlink, "linkunlink"},
+      {linktest, "linktest"},
+      {unlinkread, "unlinkread"},
+      {concreate, "concreate"},
+      {subdir, "subdir"},
+      {fourfiles, "fourfiles"},
+      {sharedfd, "sharedfd"},
+      {dirtest, "dirtest"},
+      {exectest, "exectest"},
+      {bigargtest, "bigargtest"},
+      {bigwrite, "bigwrite"},
+      {bsstest, "bsstest"},
+      {sbrkbasic, "sbrkbasic"},
+      {sbrkmuch, "sbrkmuch"},
+      {kernmem, "kernmem"},
+      {sbrkfail, "sbrkfail"},
+      {sbrkarg, "sbrkarg"},
+      {sbrklast, "sbrklast"},
+      {sbrk8000, "sbrk8000"},
+      {validatetest, "validatetest"},
+      {stacktest, "stacktest"},
+      {opentest, "opentest"},
+      {writetest, "writetest"},
+      {writebig, "writebig"},
+      {createtest, "createtest"},
+      {openiputtest, "openiput"},
+      {exitiputtest, "exitiput"},
+      {iputtest, "iput"},
+      {mem, "mem"},
+      {pipe1, "pipe1"},
+      {killstatus, "killstatus"},
+      {preempt, "preempt"},
+      {exitwait, "exitwait"},
+      {rmdot, "rmdot"},
+      {fourteen, "fourteen"},
+      {bigfile, "bigfile"},
+      {dirfile, "dirfile"},
+      {iref, "iref"},
+      {forktest, "forktest"},
+      {bigdir, "bigdir"}, // slow
+      {0, 0},
+  };
+
+  if (continuous)
+  {
+    printf("continuous usertests starting\n");
+    while (1)
+    {
+      int fail = 0;
+      int free0 = countfree();
+      for (struct test *t = tests; t->s != 0; t++)
+      {
+        if (!run(t->f, t->s))
+        {
+          fail = 1;
+          break;
+        }
+      }
+      if (fail)
+      {
+        printf("SOME TESTS FAILED\n");
+        if (continuous != 2)
+          exit(1);
+      }
+      int free1 = countfree();
+      if (free1 < free0)
+      {
+        printf("FAILED -- lost %d free pages\n", free0 - free1);
+        if (continuous != 2)
+          exit(1);
+      }
+    }
+  }
+
+  printf("usertests starting\n");
+  int free0 = countfree();
+  int free1 = 0;
+  int fail = 0;
+  for (struct test *t = tests; t->s != 0; t++)
+  {
+    if ((justone == 0) || strcmp(t->s, justone) == 0)
+    {
+      if (!run(t->f, t->s))
+        fail = 1;
+    }
+  }
+
+  if (fail)
+  {
+    printf("SOME TESTS FAILED\n");
+    exit(1);
+  }
+  else if ((free1 = countfree()) < free0)
+  {
+    printf("FAILED -- lost some free pages %d (out of %d)\n", free1, free0);
+    exit(1);
+  }
+  else
+  {
+    printf("ALL TESTS PASSED\n");
+    exit(0);
+  }
 }
