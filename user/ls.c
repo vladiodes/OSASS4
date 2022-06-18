@@ -42,8 +42,6 @@ void ls(char *path)
     return;
   }
 
-  printf("path:%s type:%d\n", path, st.type);
-
   switch (st.type)
   {
   case T_SYMLINK:

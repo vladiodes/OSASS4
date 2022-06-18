@@ -574,6 +574,42 @@ sys_exec(void)
       goto bad;
   }
 
+  begin_op();
+  struct inode *ip = namei(path);
+  ilock(ip);
+
+  if ((ip->type == T_SYMLINK))
+  {
+    int deref_count = 0;
+    while (ip->type == T_SYMLINK && deref_count < MAX_DEREFERENCE)
+    {
+      int len = ip->size - 1;
+
+      if (len > MAXPATH)
+        panic("open : corrupted symlink inode");
+
+      readi(ip, 0, (uint64)path, 0, len + 1);
+      iunlockput(ip);
+      if ((ip = namei(path)) == 0)
+      {
+        end_op();
+        return -1;
+      }
+      ilock(ip);
+      deref_count++;
+    }
+    if (deref_count >= MAX_DEREFERENCE)
+    {
+      printf("too long symlinks pointing at each other\n");
+      iunlockput(ip);
+      end_op();
+      return -1;
+    }
+  }
+
+  iunlockput(ip);
+  end_op();
+
   int ret = exec(path, argv);
 
   for (i = 0; i < NELEM(argv) && argv[i] != 0; i++)
